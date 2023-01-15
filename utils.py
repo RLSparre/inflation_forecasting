@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 import tensorflow as tf
 
 def get_data(url='https://files.stlouisfed.org/files/htdocs/fred-md/monthly/current.csv',
@@ -104,12 +105,17 @@ def samples(features, target, window_size=12):
 
     return np.array(X), np.array(y)
 
-def plot_fit(fit):
+def plot_fit(fit, path, folder, best_epoch):
     fig = plt.figure(figsize=(20, 8))
-    plt.plot(fit.history['loss'], label='training', color='Blue')
-    plt.plot(fit.history['val_loss'], label='validation', color='Red')
+    plt.plot(fit.history['loss'], label='Training', color='Blue')
+    plt.plot(fit.history['val_loss'], label='Validation', color='Red')
+    plt.axvline(best_epoch-1, c='black', ls='--', label='Best Epoch')
     plt.legend()
 
-    return fig
+    fig_path = path + folder + 'figures/'
+    fig_path_exists = os.path.exists(fig_path)
+    if not fig_path_exists:
+        os.makedirs(fig_path)
 
+    fig.savefig(fig_path + 'fit_figure', dpi=fig.dpi)
 
