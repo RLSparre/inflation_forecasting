@@ -1,5 +1,5 @@
 import utils
-from dl_model import dl_model
+from dl_model import DeepLearningModel
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # lead target
     steps_ahead = 1
     steaps_ahead_offset = pd.DateOffset(months=steps_ahead)
-    target = target[df.index[0]:df.index[-1] + steaps_ahead_offset] * 100
+    target = target[df.index[0]:df.index[-1] + steaps_ahead_offset]*100
 
     # scale features
     scaler = MinMaxScaler(feature_range=(0,1))
@@ -39,17 +39,18 @@ if __name__ == '__main__':
     X_test, y_test = X_sample[val_len:], y_sample[val_len:]
 
     # create model instance
-    model_instance = dl_model(path, X_train, y_train, X_val, y_val, X_test, y_test)
-    model_lstm, metrics_lstm = model_instance.one_layer_LSTM()
+    model_instance = DeepLearningModel(path, X_train, y_train, X_val, y_val, X_test, y_test)
+    model_ff, metrics_ff = model_instance.hypermodel('one_layer_lstm')
+    #model_lstm, metrics_lstm = model_instance.hypermodel('one_layer_lstm')
+    #model_cnn, metrics_cnn = model_instance.hypermodel('one_layer_cnn')
+    #model_lstm2, metrics_lstm2 = model_instance.hypermodel('two_layer_lstm_with_dropout')
     #model_lstm2, metrics_lstm2 = model_instance.two_layer_LSTM_with_dropout(learning_rate=0.01, epochs=50)
     #model_cnn, metrics_cnn = model_instance.one_layer_CNN(learning_rate=0.01, epochs=50)
 
-    #print(model_lstm.predict(oos_sample))
+    #print(metrics_ff)
     #print(metrics_lstm)
-    #print(model_lstm2.predict(oos_sample))
-    #print(metrics_lstm2)
-    #print(model_cnn.predict(oos_sample))
     #print(metrics_cnn)
+    #print(metrics_lstm2)
 
 
 
