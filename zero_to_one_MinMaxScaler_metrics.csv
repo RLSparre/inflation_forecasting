@@ -1,0 +1,9 @@
+;Train Score;Validation Score;Test Score;Mean Absolute Error
+one_layer_ff;0,5074;5,4443;7,7087;2,6016
+one_layer_cnn;0,2184;3,4686;2,3605;1,3731
+one_layer_gru;0,6668;5,5272;8,3884;2,7743
+one_layer_lstm;0,3418;5,5423;5,9299;2,2396
+multi_layer_ff;0,2608;4,647;3,9578;1,7838
+multi_layer_cnn;0,4039;1,9339;2,9457;1,5582
+multi_layer_gru;0,4683;2,0997;1,8065;1,2348
+cnn_lstm;0,1272;1,1202;0,7506;0,7266

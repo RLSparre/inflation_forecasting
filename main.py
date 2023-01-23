@@ -1,10 +1,8 @@
-import utils
-from dl_model import DeepLearningModel
+from deep_learning_models import DeepLearningModel
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-from sklearn.metrics import mean_squared_error
-from sklearn.preprocessing import MinMaxScaler
+import os
 import warnings
 warnings.filterwarnings("ignore")
 np.random.seed(123)
@@ -12,45 +10,31 @@ tf.random.set_seed(123)
 
 if __name__ == '__main__':
 
-    # set directory
-    path = 'C:/Users/rasmu/PycharmProjects/inflation_forecasting/'
+    # set path to current working directory
+    path = os.getcwd()
 
-    # get dataframe
-    df, target, oos_sample = utils.get_data()
+    # create instance of model with feature range from 0 to 1 for MinMaxScaler
+    model_instance = DeepLearningModel(feature_range=(0,1))
 
-    # lead target
-    steps_ahead = 1
-    steaps_ahead_offset = pd.DateOffset(months=steps_ahead)
-    target = target[df.index[0]:df.index[-1] + steaps_ahead_offset]*100
+    # list of all models included in module
+    # NOTE: calling CNN-LSTM model reshapes the samples, so if one wishes to call another model after, a new instance
+    #       must be created
+    models = ['one_layer_ff', 'one_layer_cnn', 'one_layer_gru', 'one_layer_lstm', 'multi_layer_ff', 'multi_layer_cnn',
+              'multi_layer_gru', 'cnn_lstm']
 
-    # scale features
-    scaler = MinMaxScaler(feature_range=(0,1))
-    features = scaler.fit_transform(df)
+    results, oos_sample_preds = [], []
 
-    # generate train/val/test sets
-    window_size = 12
-    X_sample, y_sample = utils.samples(features=features, target=target, window_size=window_size)
+    # iterate through models and store results
+    for model in models:
+        _, metrics, oos_sample_pred = model_instance.hypermodel(model)
+        results.append(list(metrics.values()))
+        oos_sample_preds.append(oos_sample_pred)
 
-    train_len = int(len(X_sample)*0.9)
-    val_len = int(len(X_sample)*0.95)
-
-    X_train, y_train = X_sample[:train_len], y_sample[:train_len]
-    X_val, y_val = X_sample[train_len:val_len], y_sample[train_len:val_len]
-    X_test, y_test = X_sample[val_len:], y_sample[val_len:]
-
-    # create model instance
-    model_instance = DeepLearningModel(path, X_train, y_train, X_val, y_val, X_test, y_test)
-    model_ff, metrics_ff = model_instance.hypermodel('one_layer_lstm')
-    #model_lstm, metrics_lstm = model_instance.hypermodel('one_layer_lstm')
-    #model_cnn, metrics_cnn = model_instance.hypermodel('one_layer_cnn')
-    #model_lstm2, metrics_lstm2 = model_instance.hypermodel('two_layer_lstm_with_dropout')
-    #model_lstm2, metrics_lstm2 = model_instance.two_layer_LSTM_with_dropout(learning_rate=0.01, epochs=50)
-    #model_cnn, metrics_cnn = model_instance.one_layer_CNN(learning_rate=0.01, epochs=50)
-
-    #print(metrics_ff)
-    #print(metrics_lstm)
-    #print(metrics_cnn)
-    #print(metrics_lstm2)
+    # save metrics and predictionsmode
+    metrics_df = pd.DataFrame(results, columns=metrics.keys(), index=models)
+    metrics_df.to_csv(path+'/zero_to_one_MinMaxScaler_metrics.csv', sep=';', decimal=',')
+    prediction_df = pd.DataFrame(oos_sample_preds, columns=['Prediction'], index=models)
+    prediction_df.to_csv(path + '/zero_to_one_MinMaxScaler_predictions.csv', sep=';', decimal=',')
 
 
 

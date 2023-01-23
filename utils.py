@@ -7,7 +7,8 @@ import os
 def get_data(url='https://files.stlouisfed.org/files/htdocs/fred-md/monthly/current.csv',
              transform_series=True,
              target_col='CPIAUCSL',
-             target_col_transformation=8):
+             target_col_transformation=8,
+             window_size=12):
     '''
     This function loads the data
 
@@ -40,9 +41,12 @@ def get_data(url='https://files.stlouisfed.org/files/htdocs/fred-md/monthly/curr
             df[col] = _transform_series(df[col], transformations[col])
 
         # if YoY-change, inflation rows will contain NaN values until 1960-01-01
-        df = df['1960-01-01':]
+        df = df[(df.index[0]+pd.DateOffset(months=window_size)):]
 
         # target series
+        if pd.isnull(df.index[-1]):
+            df = df.iloc[:-1]
+
         target = df[target_col]
 
         # drop columns with NaN data
@@ -51,8 +55,7 @@ def get_data(url='https://files.stlouisfed.org/files/htdocs/fred-md/monthly/curr
 
 
         # CPI data for last T+1 is not available, but features are -> use for OOS prediction
-        oos_sample = df.iloc[-13:-1]
-        oos_sample = np.array(oos_sample).reshape((1, oos_sample.shape[0], oos_sample.shape[1]))
+        oos_sample = df.iloc[-window_size:]
         # remove last row (time T) as CPI data for T+1 is not available
         df = df.iloc[:-1]
 
@@ -104,7 +107,7 @@ def samples(features, target, window_size=12):
 
     return np.array(X), np.array(y)
 
-def plot_fit(fit, path, folder, best_epoch, model_name, model_params):
+def plot_fit(fit, fig_name, path, folder, best_epoch, model_name, model_params):
     fig = plt.figure(figsize=(16, 6))
     plt.title(f"{model_name}: Training and Validation Loss")
     plt.plot(fit.history['loss'], label='Training', color='Blue')
@@ -113,10 +116,10 @@ def plot_fit(fit, path, folder, best_epoch, model_name, model_params):
     plt.figtext(0.5, 0.01, f"Tuned Hyperparameters: {model_params}", ha="center", fontsize=10)
     plt.legend()
 
-    fig_path = path + folder + 'figures/'
+    fig_path = os.path.join(path,folder) + '/figures/'
     fig_path_exists = os.path.exists(fig_path)
     if not fig_path_exists:
         os.makedirs(fig_path)
 
-    fig.savefig(fig_path + 'fit_figure', dpi=fig.dpi)
+    fig.savefig(f"{fig_path}{fig_name}", dpi=fig.dpi)
 
