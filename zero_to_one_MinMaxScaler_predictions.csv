@@ -1,0 +1,9 @@
+;Prediction
+one_layer_ff;6,911685
+one_layer_cnn;7,084916
+one_layer_gru;6,285057
+one_layer_lstm;6,7281623
+multi_layer_ff;7,2874966
+multi_layer_cnn;7,243224
+multi_layer_gru;6,00383
+cnn_lstm;7,57338
