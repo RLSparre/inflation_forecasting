@@ -20,7 +20,7 @@ if __name__ == '__main__':
     # NOTE: calling CNN-LSTM model reshapes the samples, so if one wishes to call another model after, a new instance
     #       must be created
     models = ['one_layer_ff', 'one_layer_cnn', 'one_layer_gru', 'one_layer_lstm', 'multi_layer_ff', 'multi_layer_cnn',
-              'multi_layer_gru', 'cnn_lstm']
+              'multi_layer_gru', 'multi_layer_lstm', 'cnn_lstm']
 
     results, oos_sample_preds = [], []
 
@@ -32,9 +32,9 @@ if __name__ == '__main__':
 
     # save metrics and predictionsmode
     metrics_df = pd.DataFrame(results, columns=metrics.keys(), index=models)
-    metrics_df.to_csv(path+'/zero_to_one_MinMaxScaler_metrics.csv', sep=';', decimal=',')
+    metrics_df.to_csv(path+'/zero_to_one_MinMaxScaler_metrics.csv', sep=';', decimal='.')
     prediction_df = pd.DataFrame(oos_sample_preds, columns=['Prediction'], index=models)
-    prediction_df.to_csv(path + '/zero_to_one_MinMaxScaler_predictions.csv', sep=';', decimal=',')
+    prediction_df.to_csv(path + '/zero_to_one_MinMaxScaler_predictions.csv', sep=';', decimal='.')
 
 
 

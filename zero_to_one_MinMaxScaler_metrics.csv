@@ -1,9 +1,10 @@
 ;Train Score;Validation Score;Test Score;Mean Absolute Error
-one_layer_ff;0,5074;5,4443;7,7087;2,6016
-one_layer_cnn;0,2184;3,4686;2,3605;1,3731
-one_layer_gru;0,6668;5,5272;8,3884;2,7743
-one_layer_lstm;0,3418;5,5423;5,9299;2,2396
-multi_layer_ff;0,2608;4,647;3,9578;1,7838
-multi_layer_cnn;0,4039;1,9339;2,9457;1,5582
-multi_layer_gru;0,4683;2,0997;1,8065;1,2348
-cnn_lstm;0,1272;1,1202;0,7506;0,7266
+one_layer_ff;0.574;4.8555;8.1221;2.6992
+one_layer_cnn;0.2431;3.3709;4.3466;1.9714
+one_layer_gru;0.6051;5.7581;7.2074;2.5411
+one_layer_lstm;0.3408;5.7147;10.7732;3.09
+multi_layer_ff;0.4181;3.9123;3.3797;1.6396
+multi_layer_cnn;0.3657;2.2132;2.8269;1.5267
+multi_layer_gru;0.295;1.6321;1.5885;1.1362
+multi_layer_lstm;0.3132;4.2591;5.5868;2.1887
+cnn_lstm;0.5371;4.5963;2.6877;1.407
