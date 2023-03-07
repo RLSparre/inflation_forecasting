@@ -24,10 +24,11 @@ PROJECT_NAME = 'MinMaxScaler_zero_to_one'
 class DeepLearningModel:
 
     def __init__(self,
-                 path=os.getcwd(),
+                 path,
                  steps_ahead=1,
                  feature_range=(0,1),
-                 window_size=12):
+                 window_size=12,
+                 time_distributed=False):
         '''
         :path:
         :steps_ahead:       Forecast horizon. Default 1 month.
@@ -63,6 +64,27 @@ class DeepLearningModel:
         # save index for plotting
         self.index = self.df.index[self.window_size-1:]+pd.DateOffset(months=steps_ahead)
 
+        # the samples must be reshaped to #samples x #subsequences x #window_size (time steps) x #features
+        if time_distributed:
+            subsequences = SUBSEQUENCES
+            timesteps = self.X_train.shape[1] // subsequences
+            self.X_train = self.X_train.reshape((self.X_train.shape[0],
+                                                 subsequences,
+                                                 timesteps,
+                                                 self.X_train.shape[2]))
+            self.X_val = self.X_val.reshape((self.X_val.shape[0],
+                                             subsequences,
+                                             timesteps,
+                                             self.X_val.shape[2]))
+            self.X_test = self.X_test.reshape((self.X_test.shape[0],
+                                               subsequences,
+                                               timesteps,
+                                               self.X_test.shape[2]))
+            self.oos_sample = self.oos_sample.reshape((self.oos_sample.shape[0],
+                                                       subsequences,
+                                                       timesteps,
+                                                       self.oos_sample.shape[2]))
+
     def hypermodel(self, deep_learning_model):
         '''
         This function runs hyperparameter tuning using keras-tuner to find the best model. It then retrains the best
@@ -73,50 +95,36 @@ class DeepLearningModel:
 
         if deep_learning_model == 'one_layer_ff':
             dl_model = self._build_one_layer_ff
-            folder = '/one_layer_ff/'
+            folder = 'one_layer_ff\\'
         elif deep_learning_model == 'multi_layer_ff':
             dl_model = self._build_multi_layer_ff
-            folder = '/multi_layer_ff/'
+            folder = 'multi_layer_ff\\'
         elif deep_learning_model == 'one_layer_lstm':
             dl_model = self._build_one_layer_lstm
-            folder = '/one_layer_lstm/'
+            folder = 'one_layer_lstm\\'
         elif deep_learning_model == 'one_layer_gru':
             dl_model = self._build_one_layer_gru
-            folder = '/one_layer_gru/'
+            folder = 'one_layer_gru\\'
         elif deep_learning_model == 'multi_layer_gru':
             dl_model = self._build_multi_layer_gru
-            folder = '/multi_layer_gru/'
+            folder = 'multi_layer_gru\\'
         elif deep_learning_model == 'multi_layer_lstm':
             dl_model = self._build_multi_layer_lstm
-            folder = '/multi_layer_lstm/'
+            folder = 'multi_layer_lstm\\'
         elif deep_learning_model == 'one_layer_cnn':
             dl_model = self._build_one_layer_cnn
-            folder = '/one_layer_cnn/'
+            folder = 'one_layer_cnn\\'
         elif deep_learning_model == 'multi_layer_cnn':
             dl_model = self._build_multi_layer_cnn
-            folder = '/multi_layer_cnn/'
-        elif deep_learning_model == 'cnn_lstm':
-            # the samples must be reshaped to #samples x #subsequences x #window_size (time steps) x #features
-            subsequences = SUBSEQUENCES
-            timesteps = self.X_train.shape[1] // subsequences
-            self.X_train = self.X_train.reshape((self.X_train.shape[0],
-                                                 subsequences,
-                                                 timesteps,
-                                                 self.X_train.shape[2]))
-            self.X_val = self.X_val.reshape((self.X_val.shape[0],
-                                                 subsequences,
-                                                 timesteps,
-                                                 self.X_val.shape[2]))
-            self.X_test = self.X_test.reshape((self.X_test.shape[0],
-                                                 subsequences,
-                                                 timesteps,
-                                                 self.X_test.shape[2]))
-            self.oos_sample = self.oos_sample.reshape((self.oos_sample.shape[0],
-                                                       subsequences,
-                                                       timesteps,
-                                                       self.oos_sample.shape[2]))
-            dl_model = self._build_cnn_lstm
-            folder = '/cnn_lstm/'
+            folder = 'multi_layer_cnn\\'
+        elif deep_learning_model == 'one_layer_cnn_lstm':
+            dl_model = self._build_one_layer_cnn_lstm
+            folder = 'one_layer_cnn_lstm\\'
+
+        elif deep_learning_model == 'multi_layer_cnn_lstm':
+            dl_model = self._build_multi_layer_cnn_lstm
+            folder = 'multi_layer_cnn_lstm\\'
+
         else:
             return 'Choose valid model'
 
@@ -455,7 +463,8 @@ class DeepLearningModel:
 
         return model
 
-    def _build_cnn_lstm(self, hp):
+
+    def _build_one_layer_cnn_lstm(self, hp):
         '''
         Supplementary function that builds a CNN-LSTM model with hyperparameters set up for tuning.
         The function is passed to the keras-tuner in the function 'hypermodel' for optimization.
@@ -488,6 +497,64 @@ class DeepLearningModel:
         self._compile_and_fit(model, hp_learning_rate)
 
         return model
+
+    def _build_multi_layer_cnn_lstm(self, hp):
+        '''
+        Supplementary function that builds a CNN-LSTM model with hyperparameters set up for tuning.
+        The function is passed to the keras-tuner in the function 'hypermodel' for optimization.
+
+        :param hp: hyperparameters
+        '''
+
+        model = Sequential()
+        # timedistributed layer
+        model.add(TimeDistributed(Conv1D(
+            filters=hp.Int('conv_filter', min_value=16, max_value=256, step=16),
+            kernel_size=CNN_KERNEL_SIZE,
+            padding='same',
+            input_shape=(None, self.X_train.shape[2], self.X_train.shape[3]),
+            activation='relu'
+        )))
+        model.add(TimeDistributed(MaxPooling1D(pool_size=CNN_POOL_SIZE, padding='same')))
+        model.add(TimeDistributed(Conv1D(
+            filters=hp.Int('conv_filter2', min_value=16, max_value=256, step=16),
+            kernel_size=CNN_KERNEL_SIZE,
+            padding='same',
+            activation='relu'
+        )))
+        model.add(TimeDistributed(MaxPooling1D(pool_size=CNN_POOL_SIZE, padding='same')))
+        model.add(TimeDistributed(Conv1D(
+            filters=hp.Int('conv_filter3', min_value=16, max_value=256, step=16),
+            kernel_size=CNN_KERNEL_SIZE,
+            padding='same',
+            activation='relu'
+        )))
+        model.add(TimeDistributed(MaxPooling1D(pool_size=CNN_POOL_SIZE, padding='same')))
+        model.add(TimeDistributed(Conv1D(
+            filters=hp.Int('conv_filter4', min_value=16, max_value=256, step=16),
+            kernel_size=CNN_KERNEL_SIZE,
+            padding='same',
+            activation='relu'
+        )))
+        model.add(TimeDistributed(MaxPooling1D(pool_size=CNN_POOL_SIZE, padding='same')))
+        model.add(TimeDistributed(Flatten()))
+
+        model.add(LSTM(hp.Int('units', min_value=16, max_value=256, step=16),
+                       activation='relu'))
+
+        model.add(Dense(1, activation='linear'))
+
+        # log space for values of learning rates
+        hp_learning_rate = hp.Float('learning_rate',
+                                    min_value=1e-5,
+                                    max_value=1e-2,
+                                    sampling='LOG',
+                                    default=1e-3)
+
+        self._compile_and_fit(model, hp_learning_rate)
+
+        return model
+
     def _compile_and_fit(self, model, learning_rate):
         '''
         This function compiles and fits a given model for a given learning rate with ADAM optimization for MSE loss.
